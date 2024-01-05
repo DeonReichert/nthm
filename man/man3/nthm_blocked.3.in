@@ -1,0 +1,110 @@
+.\"                              hey, Emacs:   -*- nroff -*-
+.TH NTHM_BLOCKED 3 @DATE_VERSION_NTHM_MANUAL@
+.\" Please update the above date whenever this man page is modified.
+.\"
+.\" Some roff macros, for reference:
+.\" .nh        disable hyphenation
+.\" .hy        enable hyphenation
+.\" .ad l      left justify
+.\" .ad b      justify to both left and right margins (default)
+.\" .nf        disable filling
+.\" .fi        enable filling
+.\" .br        insert line break
+.\" .sp <n>    insert n+1 empty lines
+.\" for manpage-specific macros, see man(7)
+.SH NAME
+nthm_blocked \- test whether all open pipes are busy
+.SH SYNOPSIS
+#include <nthm/nthm.h>
+.sp 1
+.BR int
+.BR nthm_blocked
+( int
+.I *err
+)
+.SH DESCRIPTION
+The
+.BR nthm_blocked
+function tests whether or not
+.BR nthm_select
+would block if it were called.
+This capability may be useful for polling the
+availability of readable pipes.
+.SH RETURN VALUE
+If there are pipes with threads tethered in the
+current scope that are still running but none ready to be read,
+then a successful call to
+.BR nthm_blocked
+returns a non-zero value because
+.BR nthm_select
+would have blocked if it were called.
+Otherwise,
+.BR nthm_blocked
+returns a zero value either because the call was unsuccessful or
+because
+.BR nthm_select
+would have returned immediately without blocking.
+.SH ERRORS
+The value of
+.I *err
+is set to non-zero if it is zero on entry and
+.BR nthm_blocked
+is unsuccessful for any reason, but is otherwise left unchanged.
+Errors indicate a failure of some internal consistency check due to
+memory corruption, misuse of the API, or a bug in
+.BR nthm.
+Bug reports including error codes are welcome.
+.SH EXAMPLE
+This example shows an event loop that interleaves 
+reading of previously opened
+.BR nthm
+pipes with other unspecified operations.
+.sp 1
+.NF
+   while (! err)
+      if (nthm_blocked (&err))
+         {
+           // do something other than waiting for pipes
+         }
+      else if (err) // not successful
+         break;
+      else if ((p = nthm_select (&err))  // not blocked
+         {
+           x = nthm_read (p, &err))
+           // do something with data x read from pipe p
+         }
+      else          // all visible pipes have been read
+         break;
+.fi
+.SH SEE ALSO
+.BR nthm (7),
+.BR nthm_open (3),
+.BR nthm_send (3),
+.BR nthm_select (3),
+.BR nthm_read (3)
+.br
+.BR nthm_truncate (3),
+.BR nthm_truncate_all (3),
+.BR nthm_truncated (3)
+.br
+.BR nthm_enter_scope (3),
+.BR nthm_exit_scope (3)
+.br
+.BR nthm_kill (3),
+.BR nthm_kill_all (3),
+.BR nthm_killed (3)
+.br
+.BR nthm_untether (3),
+.BR nthm_tether (3),
+.BR nthm_sync (3)
+.br
+.BR nthm_strerror (3),
+.BR nthm_busy (3),
+.BR pthreads (7)
+.SH AUTHOR
+Dennis Furey 
+.MT @EMAIL@
+.ME
+.SH PROJECT PAGE
+.UR @URL@
+.UE

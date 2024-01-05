@@ -1,0 +1,194 @@
+.\"                              hey, Emacs:   -*- nroff -*-
+.TH NTHM_OPEN 3 @DATE_VERSION_NTHM_MANUAL@
+.\" Please update the above date whenever this man page is modified.
+.\"
+.\" Some roff macros, for reference:
+.\" .nh        disable hyphenation
+.\" .hy        enable hyphenation
+.\" .ad l      left justify
+.\" .ad b      justify to both left and right margins (default)
+.\" .nf        disable filling
+.\" .fi        enable filling
+.\" .br        insert line break
+.\" .sp <n>    insert n+1 empty lines
+.\" for manpage-specific macros, see man(7)
+.SH NAME
+nthm_open \- start a new thread and return a pipe from it
+.SH SYNOPSIS
+#include <nthm/nthm.h>
+.sp 1
+.BR nthm_pipe
+.BR nthm_open
+(
+.BR nthm_worker
+.I &operator
+, void
+.I *operand
+, int
+.I *err
+)
+.SH DESCRIPTION
+The
+.I operator
+argument is a function that takes a
+.BR void
+pointer and an
+.BR int
+pointer and returns a
+.BR void
+pointer.  Compatible functions can be cast as such by the
+.BR nthm_worker
+type alias. The function
+.BR nthm_open
+passes the parameters
+.I operand
+and
+.I err
+to
+.I operator
+as if the caller had invoked
+.sp 1
+.BR retval
+=
+.I operator
+(
+.I operand
+,
+.I err
+)
+.sp 1
+but runs
+.I operator
+in a separate thread from the caller.
+On 32-bit systems, the
+usable stack size allocated to the created thread is limited to
+.BR NTHM_STACK_MIN
+or roughly 16 Kbytes with a view to conserving virtual address
+space. On 64-bit systems, the default stack size (typically 8MB) is
+reserved but not physically used unless the thread's stack actually
+grows to that size.
+.P
+When
+.I operator
+returns its result, the thread created for it exits.
+The
+.I operator
+function must 
+.BR *not*
+call
+.BR pthread_exit
+explicitly. If
+.I operator
+assigns an error code to
+.I *err,
+the error code
+is available to the reader of
+the pipe returned by
+.BR nthm_open.
+To avoid ambiguity,
+.I operator
+should avoid assigning error codes
+that clash with
+those noted below.
+.SH RETURN VALUE
+If
+.BR nthm_open
+does not succeed, it returns NULL and
+.I operator
+is not run.
+.P
+If
+.BR nthm_open
+succeeds, it returns a value of type
+.BR nthm_pipe
+that may be used in subsequent calls to
+.BR nthm_read,
+.BR nthm_truncate,
+.BR nthm_kill,
+.BR nthm_untether,
+.BR nthm_tether,
+and
+.BR nthm_busy.
+For example,
+.sp 1
+.nf
+   my_pipe = nthm_open ((nthm_worker) &my_function, &some_data, err);
+   // ...
+   retval = nthm_read (my_pipe, err);
+.fi
+.SH ERRORS
+If
+.I *err
+is zero on entry and
+.BR nthm_open
+does not succeed, it
+assigns a non-zero number to
+.I *err.
+Otherwise, it leaves 
+.I *err
+unchanged.
+Negative numbers from
+.BR -NTHM_MIN_ERR
+to
+.BR -NTHM_MAX_ERR
+report internal errors.
+Internal errors may be due to memory corruption,
+misuse of the API, or a bug in
+.BR nthm.
+(Bug reports are welcome.)
+Positive numbers report POSIX
+errors.
+The following specific errors are possible.
+.TP
+.BR EAGAIN
+Resources or permission are insufficient to create a thread.
+.TP
+.BR ENOMEM
+There is insufficient memory for a new thread or metadata.
+.TP
+.BR NTHM_KILLED
+No new threads may be created because the caller's thread has been killed.
+The thread may have been killed directly by its creator with
+.BR nthm_kill
+or
+.BR nthm_kill_all
+or indirectly due to the creator being killed or exiting.
+.SH NOTES
+On 64-bit systems, use this command to display the default stack size in Kbytes.
+.sp 1
+.BR ulimit
+-s
+.SH SEE ALSO
+.BR nthm (7),
+.BR nthm_send (3),
+.BR nthm_read (3),
+.BR nthm_select (3)
+.br
+.BR nthm_truncate (3),
+.BR nthm_truncate_all (3),
+.BR nthm_truncated (3)
+.br
+.BR nthm_enter_scope (3),
+.BR nthm_exit_scope (3)
+.br
+.BR nthm_kill (3),
+.BR nthm_kill_all (3),
+.BR nthm_killed (3)
+.br
+.BR nthm_untether (3),
+.BR nthm_tether (3)
+.br
+.BR nthm_blocked (3),
+.BR nthm_busy (3),
+.BR nthm_sync (3)
+.br
+.BR nthm_strerror (3),
+.BR pthreads (7),
+.BR ulimit (1)
+.SH AUTHOR
+Dennis Furey 
+.MT @EMAIL@
+.ME
+.SH PROJECT PAGE
+.UR @URL@
+.UE
