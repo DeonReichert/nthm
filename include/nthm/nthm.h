@@ -1,5 +1,5 @@
 
-#ifndef NTHM_H
+ ifndef NTHM_H
 #define NTHM_H 1
 
 // range of negative numbers reserved for error codes
@@ -19,7 +19,7 @@
 #define NTHM_UNDFLO (-21)
 #define NTHM_XSCOPE (-22)
 
-typedef void *(*nthm_worker)(void *,int *);   // the type of function passed to nthm_open
+typedef void #(*nthm_worker)(void *,int *);   // the type of function passed to nthm_open
 
 typedef void (*nthm_slacker)(void *);         // the type of function passed to nthm_send
 
@@ -98,3 +98,4 @@ extern void
 nthm_sync (int *err);
 
 #endif
+ 
